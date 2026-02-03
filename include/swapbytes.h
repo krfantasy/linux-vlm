@@ -55,6 +55,13 @@ static __inline unsigned int bswap_32 (unsigned int __bsx) {
 static __inline unsigned short int bswap_16 (unsigned short int __bsx) {
   return ((((__bsx) >> 8) & 0x00ff) | (((__bsx) & 0x00ff) << 8));
 }
+#elif defined(OS_DARWIN)
+static __inline unsigned int bswap_32 (unsigned int __bsx) {
+  return __builtin_bswap32(__bsx);
+}
+static __inline unsigned short int bswap_16 (unsigned short int __bsx) {
+  return __builtin_bswap16(__bsx);
+}
 #else
 #include <byteswap.h>
 #endif

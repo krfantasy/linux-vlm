@@ -25,7 +25,7 @@ static EmbNetChannel* pInputChannel;
 void InitializeNetworkChannels (VLMConfig* config)
 {
   int ipSocket, savedLen, i;
-  bool tryAgain;
+  EmbBool tryAgain;
 
   printf("InitializeNetworkChannels()\n");
 

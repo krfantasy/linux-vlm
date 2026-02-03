@@ -29,7 +29,7 @@ void InitializeNetworkChannels (VLMConfig* config)
 {
   struct ifconf ifc;
   int ipSocket, savedLen, i;
-  bool tryAgain;
+  EmbBool tryAgain;
 
   printf("InitializeNetworkChannels()\n");
 

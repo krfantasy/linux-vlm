@@ -143,7 +143,7 @@ void EmbQueuePutByte (EmbQueue* qp_arg, byte elt)
 
 /* Take element from queue */
 
-bool EmbQueueTake (EmbQueue* qp_arg, PtrV ep)
+EmbBool EmbQueueTake (EmbQueue* qp_arg, PtrV ep)
 {
   register EmbQueue* qp = qp_arg;
   register EmbWord put = qp->put_index;

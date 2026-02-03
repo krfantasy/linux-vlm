@@ -10,6 +10,12 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#ifdef OS_DARWIN
+#include <net/ethernet.h>
+#ifndef ETH_P_IP
+#define ETH_P_IP ETHERTYPE_IP
+#endif
+#endif
 // jj
 #include <X11/X.h>
 #if HAVE_X11_XLIB_XCB_H

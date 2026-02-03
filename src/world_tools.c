@@ -758,11 +758,7 @@ void ScanOneDirectory (World* world)
 /* Called by scandir to decide if we're interested in a given directory entry:
    We're only interested in legitimate world files of the same format as the user's world */
 
-#ifdef OS_LINUX
 int WorldP (const struct dirent* candidateWorld)
-#else
-int WorldP (struct dirent* candidateWorld)
-#endif
 {
   World aWorld, **newWorlds;
   char candidatePathname[_POSIX_PATH_MAX+1];

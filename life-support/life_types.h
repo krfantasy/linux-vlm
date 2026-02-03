@@ -13,7 +13,7 @@ typedef uint32_t uEmbWord;				/* A word in the communications area */
 typedef EmbWord EmbPtr;					/* "Pointer" to communication area = word offset */
 typedef uEmbWord SignalMask;			/* 32-bit bit mask of signals */
 typedef EmbWord SignalNumber;			/* Index into that bit mask */
-typedef EmbWord bool;					/* Boolean value for use in embedded data structure */
+typedef EmbWord EmbBool;					/* Boolean value for use in embedded data structure */
 typedef unsigned char boolean;			/* Boolean value for day-to-day use */
 typedef unsigned char byte;				/* byte = unsigned 8-bit byte */
 typedef void* PtrV;						/* PtrV is like Ptr but with better error checking */

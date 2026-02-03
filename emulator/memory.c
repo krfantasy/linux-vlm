@@ -1345,13 +1345,18 @@ static int mvalid (caddr_t address, size_t count, int access)
 {
   struct sigaction action, oldaction;
   sigset_t oldmask;
-  size_t page_size = getpagesize();
+  long page_size_long = sysconf(_SC_PAGESIZE);
+  size_t page_size;
   caddr_t end = address + count;
   caddr_t p=NULL;
   int check_read  = access & PROT_READ;
   int check_write = access & PROT_WRITE;
   int result = OK, reading=TRUE;
   char datum=0;
+
+  if (page_size_long <= 0)
+    vpunt (NULL, "Unable to determine system page size");
+  page_size = (size_t)page_size_long;
 
   sigprocmask(SIG_SETMASK, NULL, &oldmask);
 
@@ -1628,7 +1633,69 @@ void segv_handler (int sigval, register siginfo_t *si, void *uc_p)
   }
 }
 
-#elif defined(OS_DARWIN)
+#elif defined(OS_DARWIN) && defined(ARCH_ARM64)
+
+void segv_handler (int sigval, register siginfo_t *si, void *uc_p)
+{
+  register ucontext_t *uc = (ucontext_t*)uc_p;
+  void *fault_addr = (void*)uc->uc_mcontext->__es.__far;
+  if (fault_addr == NULL)
+    fault_addr = si->si_addr;
+  register uint64_t maybevma = (uint64_t) ((Tag *)fault_addr - TagSpace);
+  register Integer vma = (Integer) maybevma;
+  register VMAttribute attr = VMAttributeTable[MemoryPageNumber(vma)];
+
+  if (maybevma >> 32) {
+    /* Not a fault in Lisp space */
+    vpunt (NULL, "Unexpected SEGV at PC %p on VMA %p",
+	   (void*)uc->uc_mcontext->__ss.__pc, fault_addr);
+  }
+
+  if (last_vma == (caddr_t)fault_addr)
+  {
+    if (++times > 10)
+    {
+      /* make genera bus-error */
+      processor->vma = (uint64_t)vma;
+      uc->uc_mcontext->__ss.__pc = (uint64_t)DECODEFAULT;
+      return;
+    }
+  }
+  else
+  {
+    last_vma = (caddr_t)fault_addr;
+    times = 1;
+  }
+
+  switch (attr & (fault_mask | VMAttribute_TransportDisable | VMAttribute_Exists))
+  {
+    case VMAttribute_Exists:
+    case VMAttribute_Exists|VMAttribute_TransportDisable:
+    case VMAttribute_Exists|VMAttribute_TransportDisable|VMAttribute_TransportFault:
+      {
+	/* no Lisp fault, just note ephemeral and modified and retry */
+	register PHTEntry *ptr = ResidentPagesPointer;
+	
+	*ptr = vma;
+	if (++ptr >= &ResidentPages[ResidentPages_Size])
+	{
+	  ResidentPagesWrap = TRUE;
+	  ptr = ResidentPages;
+	}
+	ResidentPagesPointer = ptr;
+    
+	AdjustProtection(vma, attr|(VMAttribute_Ephemeral|VMAttribute_Modified));
+      }
+      break;
+
+    default:
+      /* a true fault, advance the pc into the fault handler */
+      processor->vma = (uint64_t)vma;
+      uc->uc_mcontext->__ss.__pc = (uint64_t)DECODEFAULT;
+  }
+}
+
+#elif defined(OS_DARWIN) && defined(ARCH_PPC64)
 #define OPCODE_MASK 0xFC000000
 #define OPCODE_LBZ  0x88000000
 #define OPCODE_STB  0x98000000

@@ -48,6 +48,9 @@ typedef long s64;
 #define PROCESSORSTATE_DATAREAD		-504
 #define PROCESSORSTATE_DATAREAD_MASK	-512
 
+static int show_loc_count = 0;
+static u64 show_loc_bsp = 0;
+
 /*
 t1	1	instn
 t2	2	iword
@@ -556,74 +559,34 @@ int iInterpret (PROCESSORSTATEP ivoryp) {
   memset(_exectimes,0,sizeof(_exectimes));
 #endif // EXECTIMES
 #endif
-
-void
-dumpcache(PROCESSORSTATEP p)
-{
-  CACHELINEP c, ce;
-  int i, n;
-  char *name;
-
-  printf("icachebase %p, endicache %p\n",
-	 processor->icachebase, processor->endicache);
-
-  ce = (CACHELINEP)processor->endicache;
-  for (c = (CACHELINEP)processor->icachebase, n = 0; c <= ce; c++, n++) {
-
-    //    if (n > 16) break;
-
-    if (c->pctag == 0 && c->pcdata == 0)
-      continue;
-
-    for (i = 0; i < 256*4; i++)
-      if (_halfworddispatch[i] == c->code)
-	break;
-    if (i == 256*4)
-      name = "unknown";
-    else
-      name = halfwordnames[i];
-
-    printf("%p: nextcp %p pc %08x %08x inst %08x code %p %s\n",
-	   c, c->nextcp, c->pctag, c->pcdata, c->instruction, c->code, name);
-  }
-}
-
-void
-show_loc(void)
-{
-  static int c = 0;
-  static u64 bsp;
-  u64 *p = (u64 *)iSP;
-  u64 tos = *p;
-  u32 cc, t, v;
-  char *str = 0;
-  int i;
-
-  cc = ((tos >> 32) & 0xc0) >> 6;
-  t = (tos >> 32) & 0x3f;
-  v = (u32)tos;
-
-  c++;
-  //  if (c >= 20) exit(1);
-  if (c == 1) bsp = iSP;
-  //  printf("%d: ", c);
-
-
-  for (i = 0; i < 256*4; i++)
-    if (_halfworddispatch[i] == ((CACHELINEP)iCP)->code)
-      break;
-
-  if (i == 256*4)
-    str = 0;
-  else
-    str = halfwordnames[i];
-
-  printf("PC %08x(%s), SP: %08x, TOS: %d.%02x.%08x,%s%s\n",
-	 (int)iPC/2, (iPC&1) ? "Odd" : "Even",
-	 (int)(0xf8000101 + ((iSP - bsp) / 8)),
-	 cc, t, v, str ? " " : "", str ? str : "");
-}
-
+#define show_loc() do { \
+  u64 *p = (u64 *)iSP; \
+  u64 tos = *p; \
+  u32 cc, t, v; \
+  char *str = 0; \
+  int i; \
+  \
+  cc = ((tos >> 32) & 0xc0) >> 6; \
+  t = (tos >> 32) & 0x3f; \
+  v = (u32)tos; \
+  \
+  show_loc_count++; \
+  if (show_loc_count == 1) show_loc_bsp = iSP; \
+  \
+  for (i = 0; i < 256*4; i++) \
+    if (_halfworddispatch[i] == ((CACHELINEP)iCP)->code) \
+      break; \
+  \
+  if (i == 256*4) \
+    str = 0; \
+  else \
+    str = halfwordnames[i]; \
+  \
+  printf("PC %08x(%s), SP: %08x, TOS: %d.%02x.%08x,%s%s\n", \
+	 (int)iPC/2, (iPC&1) ? "Odd" : "Even", \
+	 (int)(0xf8000101 + ((iSP - show_loc_bsp) / 8)), \
+	 cc, t, v, str ? " " : "", str ? str : ""); \
+} while (0)
 
 //  printf("[iInterpret]\n");
 
@@ -662,7 +625,11 @@ processor->stop_interpreter = 0;
   feclearexcept(FE_ALL_EXCEPT);
   // jj
   //  fedisableexcept(FE_ALL_EXCEPT);
+#ifdef OS_DARWIN
+  /* Darwin does not provide fedisableexcept. */
+#else
   fedisableexcept(FE_INEXACT);
+#endif
   // jj
 
   {
@@ -708,6 +675,7 @@ processor->stop_interpreter = 0;
 #include "idouble.c"
 #include "ifunjosh.c"
 #include "ifuntran.c"
+#undef show_loc
 }
 
 void SpinWheels () {

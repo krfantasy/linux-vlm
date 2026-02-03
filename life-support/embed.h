@@ -25,14 +25,14 @@
 typedef struct
   {
 	pthread_t	handlerThread;		/* Thread which runs this signal handler */
-	bool		handlerThreadSetup;	/* TRUE => the above thread has been created */
+	EmbBool		handlerThreadSetup;	/* TRUE => the above thread has been created */
 	SignalMask	signal;				/* Identifies the signal under its care */
 	ProcPtrV	handlerFunction;	/* The function which actually handles the signal ... */
 	PtrV		handlerArgument;	/* ... and its argument */
   }		SignalHandler;
 
 void			EmbSendSignal (SignalNumber signal);
-SignalNumber	InstallSignalHandler(ProcPtrV singalHandler, PtrV signalArgument, bool inputP);
+SignalNumber	InstallSignalHandler(ProcPtrV singalHandler, PtrV signalArgument, EmbBool inputP);
 void			RemoveSignalHandler (SignalNumber signal);
 void			SignalLater (SignalNumber signal);
 
@@ -183,51 +183,51 @@ typedef struct
 	EmbWord	guestStatus;			/* A GuestStatus code */
 
 	pthread_attr_t	pollThreadAttrs;		/* Attributes used to create polling threads */
-	bool			pollThreadAttrsSetup;	/* TRUE => Above attributes have been created */
+	EmbBool			pollThreadAttrsSetup;	/* TRUE => Above attributes have been created */
 
 	pthread_attr_t	outputThreadAttrs;		/* Attributes used to create output threads */
-	bool			outputThreadAttrsSetup;	/* TRUE => Above attributes have been created */
+	EmbBool			outputThreadAttrsSetup;	/* TRUE => Above attributes have been created */
 
 	pthread_attr_t	inputThreadAttrs;		/* Attributes used to create input threads */
-	bool			inputThreadAttrsSetup;	/* TRUE => Above attributes have been created */
+	EmbBool			inputThreadAttrsSetup;	/* TRUE => Above attributes have been created */
 
-	bool			useSignalLocks;				/* TRUE => Manipulate signals under the lock */
+	EmbBool			useSignalLocks;				/* TRUE => Manipulate signals under the lock */
 	SignalHandler	signalHandler[NSignals];	/* The guest-to-host signal handlers */
 	SignalMask		reawaken;					/* Signals to try again on next clock tick */
 	pthread_mutex_t	signalLock;					/* Used to control access to signals */
-	bool			signalLockSetup;			/* TRUE => the above mutex has been created */
+	EmbBool			signalLockSetup;			/* TRUE => the above mutex has been created */
 	pthread_cond_t	signalSignal;				/* Used to wakeup signal handlers */
-	bool			signalSignalSetup;			/* TRUE => the above has been created */
+	EmbBool			signalSignalSetup;			/* TRUE => the above has been created */
 
 	pthread_t		pollingThread;		/* Life Support polling loop runs in this thread */
-	bool			pollingThreadSetup;	/* TRUE => Life Support polling thread was created */
+	EmbBool			pollingThreadSetup;	/* TRUE => Life Support polling thread was created */
 	long			pollTime;			/* Nanoseconds since we last polled all signals */
 	long			pollClockTime;		/* Nanoseconds until next periodic clock interrupt */
 
 	pthread_mutex_t	clockLock;			/* Used to implement an interval timer */
-	bool			clockLockSetup;		/* TRUE => the above mutex has been created */
+	EmbBool			clockLockSetup;		/* TRUE => the above mutex has been created */
 	pthread_cond_t	clockSignal;		/* Used to implement an interval timer */
-	bool			clockSignalSetup;	/* TRUE => the above has been created */
+	EmbBool			clockSignalSetup;	/* TRUE => the above has been created */
 	pthread_t		clockThread;		/* The thread which actually implements the timer */
-	bool			clockThreadSetup;	/* TRUE => Above thread has been created */
+	EmbBool			clockThreadSetup;	/* TRUE => Above thread has been created */
 	long			clockTime;			/* Microseconds until next interval timer interrupt */
 
 	EmbWord	resetRequestCount;			/* # of times that Lisp (not IFEP) requested a reset */
 	EmbWord	restartApplicationsCount;	/* # of times we've been requested to restart */
 
-	bool	inhibitDisk;			/* TRUE => don't process any disk I/O requests */
+	EmbBool	inhibitDisk;			/* TRUE => don't process any disk I/O requests */
 	EmbWord	debugLevel;				/* Controls level of debugging output */
 
 	caddr_t	slaveTrigger;			/* Address of location monitored by VLM to simulate
 									   a high-priority sequence break */
 
 	pthread_mutex_t	XLock;			/* Used to control access to the X library */
-	bool			XLockSetup;		/* TRUE => the above mutex has been created */
+	EmbBool			XLockSetup;		/* TRUE => the above mutex has been created */
 
 	pthread_mutex_t	wakeupLock;			/* Used by the VLM to wait for activity */
-	bool			wakeupLockSetup;	/* TRUE => the above mutex has been created */
+	EmbBool			wakeupLockSetup;	/* TRUE => the above mutex has been created */
 	pthread_cond_t	wakeupSignal;		/* Used by the VLM to wait for activity */
-	bool			wakeupSignalSetup;	/* TRUE => the above has been created */
+	EmbBool			wakeupSignalSetup;	/* TRUE => the above has been created */
 
 	/* Add new slots at the end of this structure as multiple programs use this data */
   }		EmbCommArea;
@@ -324,7 +324,7 @@ typedef struct
   }		EmbQueue;
 
 void	EmbQueuePut (EmbQueue* q, PtrV element);		/* Put element into queue */
-bool	EmbQueueTake (EmbQueue* q, PtrV element);		/* Take element from queue */
+EmbBool	EmbQueueTake (EmbQueue* q, PtrV element);		/* Take element from queue */
 int		EmbQueueSpace (EmbQueue* q);					/* Number of free elements */
 int		EmbQueueFilled (EmbQueue* q);					/* Number of non-free elements */
 void	EmbQueuePutWord (EmbQueue* q, EmbWord element);	/* Put element into word queue */
@@ -398,7 +398,7 @@ typedef struct
   {
 	EmbQueue	*command_queue_ptr;	/* For faster access to the queues ... */
 	EmbQueue	*status_queue_ptr;	/* ... */
-	bool		error_pending;		/* TRUE => channel is in error and needs to be reset */
+	EmbBool		error_pending;		/* TRUE => channel is in error and needs to be reset */
 	int		fd;			/* File descriptor of the partition or -1 if not open */
 	int             blocksize ;             /* size of the blocks to read/write (in Bytes) */
 	char*           filename ;              /* the filename */
@@ -548,7 +548,7 @@ typedef struct {
 	EmbQueue	*inputRequestQ;			/* ... */
 	EmbQueue	*inputReplyQ;			/* ... */
 	pthread_t	drawRunLights;			/* Thread used to draw the run lights */
-	bool		drawRunLightsSetup;		/* TRUE => The above thread exists */
+	EmbBool		drawRunLightsSetup;		/* TRUE => The above thread exists */
 	char		*hostName;				/* Name of the host where the console will appear */
 	void		*display;				/* X display object of the console */
 	int			fd;						/* File descriptor from display object for I/O */
@@ -648,9 +648,9 @@ typedef struct {
   }		progress_note;
   /* The remaining fields are not visible to Ivory */
   pthread_t	coldLoadInput;		/* The thread that processes cold load input */
-  bool		coldLoadInputSetup;	/* The thread has been created */
+  EmbBool		coldLoadInputSetup;	/* The thread has been created */
   int		fd;			/* File descriptor of the display if not -1 */
-  bool	is_selected;			/* non-zero when cold load is selected */
+  EmbBool	is_selected;			/* non-zero when cold load is selected */
   EmbWord	command_history_top;	/* last used element of command history */
   EmbWord	command_history_wrapped;/* whether/not history has wrapped around */
   EmbWord	command_history[ColdLoadCommandHistorySize];	/* the history */

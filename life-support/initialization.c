@@ -382,7 +382,11 @@ int  InitializeLifeSupport (VLMConfig* config)
 		EmbCommAreaPtr->unixLoginName = NullEmbPtr;
 	EmbCommAreaPtr->unixUID = getuid ();
 	EmbCommAreaPtr->unixGID = getgid ();
+#ifdef OS_LINUX
 	cwd = get_current_dir_name ();
+#else
+	cwd = getcwd (NULL, 0);
+#endif
 	if (cwd != NULL)
 		EmbCommAreaPtr->unixCwd = MakeEmbString (cwd);
 	else
@@ -552,7 +556,7 @@ void TerminateLifeSupport ()
 /* Setup the attributes for a class of threads */
 
 void SetupThreadAttrs (char* class, int priorityBoost, pthread_attr_t* threadAttrs,
-							  bool* threadAttrsSetup)
+							  EmbBool* threadAttrsSetup)
 {
   size_t stackSize;
 

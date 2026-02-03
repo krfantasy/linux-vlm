@@ -51,7 +51,7 @@ void	TerminateLifeSupport (void);
 
 void		ParseVersionNumber (char* versionString, int* majorVersion, int* minorVersion, int* majorRevision, int* minorRevision);
 void		SetupThreadAttrs (char* class, int priorityBoost, pthread_attr_t* threadAttrs,
-								  bool* threadAttrsSetup);
+								  EmbBool* threadAttrsSetup);
 
 
 /*** cold_load.c ***/

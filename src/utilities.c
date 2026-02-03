@@ -8,7 +8,9 @@
 #include <sys/mman.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#ifdef OS_LINUX
 #include <linux/unistd.h>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xresource.h>

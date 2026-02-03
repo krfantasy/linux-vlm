@@ -91,7 +91,12 @@ void ill_handler (int sigval, siginfo_t *si, void *uc)
 {
   ((ucontext_t*)uc)->uc_mcontext.gregs[REG_RIP] = (uint64_t)DoIStageError;
 }
-#elif defined(OS_DARWIN)
+#elif defined(OS_DARWIN) && defined(ARCH_ARM64)
+void ill_handler (int sigval, siginfo_t *si, void *uc)
+{
+     ((ucontext_t*)uc)->uc_mcontext->__ss.__pc = (uint64_t)DoIStageError;
+}
+#elif defined(OS_DARWIN) && defined(ARCH_PPC64)
 void ill_handler (int sigval, siginfo_t *si, void *uc)
 {
      ((ucontext_t*)uc)->uc_mcontext->ss.srr0 = (uint64_t)DoIStageError;
@@ -136,7 +141,12 @@ void fpe_handler (int sigval, siginfo_t *si, void *uc)
 //
 // jj
 //
-#elif defined(OS_DARWIN)
+#elif defined(OS_DARWIN) && defined(ARCH_ARM64)
+void fpe_handler (int sigval, siginfo_t *si, void *uc)
+{
+     ((ucontext_t*)uc)->uc_mcontext->__ss.__pc = (uint64_t)ARITHMETICEXCEPTION;
+}
+#elif defined(OS_DARWIN) && defined(ARCH_PPC64)
 void fpe_handler (int sigval, siginfo_t *si, void *uc)
 {
      ((ucontext_t*)uc)->uc_mcontext->ss.srr0 = (uint64_t)ARITHMETICEXCEPTION;
@@ -422,11 +432,29 @@ static void ComputeSpeed (int64_t *speed) {
   *speed=((((int64_t) tmin)*1000000L)/0x4000000L);
   processor->mscmultiplier=(*speed<<24)/1000000;
 }
+#elif defined(ARCH_ARM64)
+static void ComputeSpeed (int64_t *speed) {
+  extern void SpinWheels ();
+  struct tms tms;
+  int timebefore, timeafter, t1, tmin=0x7FFFFFFF, i;
+  int64_t tps = sysconf(_SC_CLK_TCK);
+  for (i=0; i<3; i++) {
+    times(&tms);
+    timebefore = ((int)((int64_t) (tms.tms_utime+tms.tms_stime)*1000000/tps));
+    SpinWheels();
+    times(&tms);
+    timeafter = ((int)((int64_t) (tms.tms_utime+tms.tms_stime)*1000000/tps));
+    t1=timeafter-timebefore;
+    if (t1 < tmin) tmin=t1;
+  };
+  *speed=((((int64_t) tmin)*1000000L)/0x4000000L);
+  processor->mscmultiplier=(*speed<<24)/1000000;
+}
 #endif
 
 static void RunPOST (int64_t speed) {
   int mstimeb, mstimea, result;
-#if defined(ARCH_ALPHA) || defined(ARCH_X86_64)
+#if defined(ARCH_ALPHA) || defined(ARCH_X86_64) || defined(ARCH_ARM64)
   struct tms tms;
   int64_t tps = sysconf(_SC_CLK_TCK);
 #endif
@@ -437,7 +465,7 @@ static void RunPOST (int64_t speed) {
   else
     InitializeFIBTest (); /* This is the Power on self test */
   if (Trace) InitializeTracing (1000, processor->epc >> 1, 0, NULL);
-#if defined(ARCH_ALPHA) || defined(ARCH_X86_64)
+#if defined(ARCH_ALPHA) || defined(ARCH_X86_64) || defined(ARCH_ARM64)
   times(&tms);
   mstimeb = (int)((int64_t) (tms.tms_utime+tms.tms_stime)*1000000/tps);
 #elif defined(ARCH_PPC64)
@@ -447,7 +475,7 @@ static void RunPOST (int64_t speed) {
       result!=HaltReason_Halted)
     vwarn ("POST", "FAILED: %s", haltreason(result));
   else {
-#if defined(ARCH_ALPHA) || defined(ARCH_X86_64)
+#if defined(ARCH_ALPHA) || defined(ARCH_X86_64) || defined(ARCH_ARM64)
     times(&tms);
     mstimea = ((int)((int64_t) (tms.tms_utime+tms.tms_stime)*1000000/tps));
 #elif defined(ARCH_PPC64)
@@ -654,6 +682,11 @@ void InitializeIvoryProcessor (Integer *basedata, Tag *basetag)
   processor->msclockcache = 0;
   processor->previoustb = timebase ();
 #elif defined(ARCH_X86_64)
+  /* MS clock -- initial values */
+  processor->mscmultiplier=109051; /* 6.5 ns clock RPCC N=1 */
+  processor->msclockcache=0;
+  processor->previousrcpp = 0;
+#elif defined(ARCH_ARM64)
   /* MS clock -- initial values */
   processor->mscmultiplier=109051; /* 6.5 ns clock RPCC N=1 */
   processor->msclockcache=0;

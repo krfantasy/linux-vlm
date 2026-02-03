@@ -6,10 +6,18 @@
 #include <net/if_arp.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
+#ifdef OS_LINUX
 #include <netpacket/packet.h>
+#endif
 //
 // globals
 //
+#ifndef ETH_ALEN
+#define ETH_ALEN ETHER_ADDR_LEN
+#endif
+#ifndef ETH_P_IP
+#define ETH_P_IP ETHERTYPE_IP
+#endif
 #define ETH_P_CHAOS 0x0804
 #define ETH_P_ARP 0x0806
 #define MIN_CHAOS_PACKET_SIZE 34

@@ -37,7 +37,7 @@ void InitializeSignalHandlers ()
 
 /* Install a signal handler -- Handlers are implemented as threads */
 
-SignalNumber InstallSignalHandler (ProcPtrV signalHandler, PtrV signalArgument, bool inputP)
+SignalNumber InstallSignalHandler (ProcPtrV signalHandler, PtrV signalArgument, EmbBool inputP)
 {
   int	policy, priority, i;
   SignalMask signal;

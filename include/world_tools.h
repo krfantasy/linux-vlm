@@ -195,11 +195,7 @@ void		ReadSwappedVLMWorldFilePage (World* world, int pageNumber);
 void		ReadSwappedVLMWorldFileQ (World* world, int qNumber, LispObj *q);
 void		ScanOneDirectory (World* world);
 Integer	VLMLoadMapData (World* world, LoadMapEntry* mapEntry);
-#ifdef OS_LINUX
 int		WorldP (const struct dirent* candidateWorld);
-#else
-int		WorldP (struct dirent* candidateWorld);
-#endif
 void		WriteIvoryWorldFileNextQ (World* world, LispObj q);
 void		WriteIvoryWorldFilePage (World* world);
 void		WriteVLMWorldFileHeader (World* world);
